@@ -3,73 +3,57 @@ import json
 import random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+import random
+import json
+import os
 
-# قراءة جميع الدول من ملف JSON
-with open("countries.json", encoding="utf-8") as f:
+# تحميل الدول
+with open("countries.json", "r", encoding="utf-8") as f:
     countries = json.load(f)
 
-# لتخزين الدولة الحالية لكل لاعب
-current_country = {}
+current_questions = {}
 
-# لتخزين النقاط لكل لاعب
-scores = {}
-
-# أمر البداية
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "🎮 مرحبا بك في لعبة العواصم!\n"
-        "اكتب /play باش نبدأو\n"
-        "اكتب /score باش تشوف نقاطك"
+        "مرحبا 👋\n"
+        "أنا لعبة العواصم 🌍\n"
+        "اكتب /play لبدء اللعب"
     )
 
-# أمر اللعب
 async def play(update: Update, context: ContextTypes.DEFAULT_TYPE):
     country = random.choice(list(countries.keys()))
-    current_country[update.effective_user.id] = country
-    flag = countries[country]["flag"]  # إيموجي العلم
-    
+    capital = countries[country]["capital"]
+    flag = countries[country]["flag"]
+
+    current_questions[update.effective_user.id] = capital
+
     await update.message.reply_text(
-        f"🌍 ما هي عاصمة {country}? {flag}"
+        f"🌍 ما هي عاصمة {country}؟ {flag}"
     )
 
-# التحقق من الإجابة وإضافة النقاط
-async def answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-
-    if user_id not in current_country:
-        await update.message.reply_text("اكتب /play باش تبدأ اللعبة 😉")
+    if user_id not in current_questions:
         return
 
-    correct = countries[current_country[user_id]]["capital"]
-    user_answer = update.message.text.strip()
-
-    if user_answer == correct:
-        await update.message.reply_text("✅ صح! برافو عليك 👏")
-        scores[user_id] = scores.get(user_id, 0) + 1
+    if update.message.text.strip() == current_questions[user_id]:
+        await update.message.reply_text("✅ إجابة صحيحة!")
     else:
-        await update.message.reply_text(f"❌ خطأ\nالعاصمة الصحيحة هي: {correct}")
+        await update.message.reply_text(
+            f"❌ خطأ، الإجابة الصحيحة هي: {current_questions[user_id]}"
+        )
 
-    del current_country[user_id]
-    await update.message.reply_text("تحب تعاود؟ اكتب /play")
+    del current_questions[user_id]
 
-# عرض النقاط
-async def score(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    user_score = scores.get(user_id, 0)
-    await update.message.reply_text(f"🏆 نقاطك: {user_score}")
-
-# تشغيل البوت
 def main():
-   app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
-
+    app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("play", play))
-    app.add_handler(CommandHandler("score", score))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, answer))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer))
 
-    print("🤖 البوت راهو يخدم...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
