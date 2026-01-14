@@ -46,7 +46,7 @@ async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     del current_questions[user_id]
 
 def main():
-    app = ApplicationBuilder().token(os.environ["TOKEN"]).build()
+    app = ApplicationBuilder().token(os.environ["8339013512:AAGnr2i2pWXB7DnQaEMvwoVu6W2Hz3HG2VU"]).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("play", play))
